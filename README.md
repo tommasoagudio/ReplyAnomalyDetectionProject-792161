@@ -43,10 +43,10 @@ To reduce noise, we generated five different days using the VAE and computed the
     ![5 minute moving average](images/output.png)
 
   - **5-Minute Moving Average Comparison**:  
-    We replaced the original 15-minute window in a dataset copy with the LSTM forecast. Then we plotted actual vs. predicted values using a 5-minute rolling average over a 45-minute window. This approach allows visual anomaly detection by highlighting significant deviations and line crossings, indicating potential anomalies.
+    We replaced the original 15-minute window in a dataset copy with the LSTM forecast. Then we plotted actual vs. predicted values using a 5-minute rolling average over a 45-minute window. We chose this as our first approach since it allows visual anomaly detection by highlighting significant deviations and line crossings, indicating potential anomalies.
 
   - **Isolation Forest**:  
-    We also applied an Isolation Forest to detect anomalies using the actual and forecasted 15-minute windows. Both were fed into the model, and predictions were plotted to highlight anomalies. These were visually verified with side-by-side plots of original vs. predicted values.
+    We also applied an Isolation Forest to detect anomalies using the actual and forecasted 15-minute windows. Both were fed into the model, and predictions were plotted to highlight anomalies. We implemented also the isolation forest because we were interested also in visualizing the anomalies not only on the moving average but also on the actual data points. These were visually verified with side-by-side plots of original vs. predicted values.
 
 - **Workflow Overview**:  
   The general workflow of the entire project is summarized in the following flowchart. The repository includes a `requirements.txt` file to install all dependencies:
@@ -78,7 +78,7 @@ We conducted multiple experiments, covering all aspects from data augmentation t
 
 ## **Results**
 
-The final results are quite satisfying, especially considering the effort-to-impact ratio. We invested significant time in data augmentation to ensure a solid foundation before forecasting and anomaly detection.
+The final results are quite satisfying. We invested significant time in data augmentation to ensure a solid foundation before forecasting and anomaly detection.
 
 Here is the distribution comparison after VAE augmentation:
 
@@ -104,9 +104,12 @@ This project was both challenging and rewarding. We explored unfamiliar areas su
 
 Although some ideas—like using GANs or AutoEncoders for anomaly detection—didn't pan out, we believe the final solution is robust and effective. It systematically addresses forecasting and anomaly detection with thoughtful modeling and meaningful visualizations.
 
-There’s plenty of room for future improvements, such as:
-- Tuning a more accurate LSTM model for better forecasts and anomaly identification  
-- Exploring alternative augmentation strategies to evaluate their impact on downstream performance
+there’s plenty of room for future improvements, such as:
+
+- exploring alternative augmentation strategies to evaluate their impact on downstream performance  
+- improve our autoencoder to better capture the initial distribution, so that we can feed multiple days to the lstm and get more accurate results  
+- predict also other features like number of retry so that we can spot anomalies also based on that  
+- since we lost the majority of our time trying in the augmentation process, we think that we could’ve tried to implement different solutions/models for our forecasting and anomaly detection  
 
 ---
 
