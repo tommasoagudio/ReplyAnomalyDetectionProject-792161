@@ -1,13 +1,15 @@
-# **Reply anomaly detection project**
+# **Reply Anomaly Detection Project**
 
 ## **Team Members**
-- Tommaso Agudio, 792161
-- Michele Aversa, 800961
-- Nicolò Cappellini, 112233
+- Tommaso Agudio, 792161  
+- Michele Aversa, 800961  
+- Nicolò Cappellini, 112233  
+
+---
 
 ## **Introduction**
 
-This project addresses a forecasting and anomaly detection tasks. In order to have more data the part of augmentation plays a crucial role, and it was done using VAE to get other 5 days worth of data. The original dataset we were given is a dataset of a betting site, where we have minute by minute the working day, with number of transactions and other important features. 
+This project addresses forecasting and anomaly detection tasks. To increase data volume, augmentation played a crucial role. We used a Variational Autoencoder (VAE) to generate five additional days of data. The original dataset, provided by a betting site, contains minute-by-minute logs of working days, including the number of transactions and other important features.
 
 ---
 
@@ -17,32 +19,95 @@ This project addresses a forecasting and anomaly detection tasks. In order to ha
 
 The workflow includes the following main steps:
 
-- **Data Agumentation**: We have done data agumentation using VAE in order to get more data to work with. 
-- **Feature Selection**: For our forecasts we used the following features: 
-    - **NUMERO TRANSAZIONI** – Total number of transactions.
-    - **NUMERO TRANSAZIONI ERRATE** – Number of failed or incorrect transactions.
-    - **NUMERO RETRY** – Number of retry attempts made.
-    - **TEMPO MAX** – Maximum time taken (possibly per transaction).
-    - **DATA ORA** - The time and day when the transactions happened. 
+- **Data Augmentation**:  
+  We used a Variational Autoencoder (VAE) for data augmentation. After experimenting with the loss function, we achieved a distribution similar to the original. However, we encountered two issues:
+  - The `DATA ORA` column did not correctly reflect exact minutes.
+  - After spending significant time adjusting the loss function without resolving the issue, we decided to hardcode the `DATA ORA` column. Although this may slightly affect distribution accuracy, it ensured correct time formatting.
+
+To reduce noise, we generated five different days using the VAE and computed the mean of the `NUMERO TRANSAZIONI` feature across them.
+
+- **Feature Selection**:  
+  For forecasting, we used the following features:
+  - **NUMERO TRANSAZIONI** – Total number of transactions  
+  - **NUMERO TRANSAZIONI ERRATE** – Number of failed or incorrect transactions  
+  - **NUMERO RETRY** – Number of retry attempts  
+  - **TEMPO MAX** – Maximum processing time per transaction  
+
+  These features were selected using a correlation matrix, ensuring minimal multicollinearity by picking features with low mutual correlation.
 
 - **Modeling & Detecting Anomalies**:
 
-  - LSTM: We used LSTM in order to forecast a window of 15 minutes using a window of 60 earlier minutes as input data. By doing so we thought that could give the LSTM a "memory" of the behaviour of the "Number of Transactions" in that given window of the day. For instance, if we trained out LSTM on the whole dataset and then forecasted a 15 minutes, the risk was that the LSTM wasn't catching the trend in that specific moment of the day. 
+  - **LSTM**:  
+    We trained an LSTM model to forecast 15-minute intervals based on the previous 60 minutes of data. This design aimed to give the LSTM a temporal context specific to each part of the day. Forecasting based on the entire dataset could cause the model to miss localized trends and variations.
 
-    ![5 minute moving average](images/output.png)     
-    
-  - Crossing 5 minutes moving average: We took the LSTM predictions and replaced the original 15 minutes timeframe in a copy of the dataset. Then we created a plot of "Actual VS Forecasted" for a window of 45 minutes with the 5 minutes rolling averages. Doing so gave us a plot where we could see how the forecast behave in comparison to the orginal data. Also, this is a common technique do identify anomalies in the forecasted values. For instance, we have an anomaly in the forecast when it is above the original data or crosses the original data. For example, we got in a timeframe the following plot:
+    ![5 minute moving average](images/output.png)
 
-    ![5 minute moving average](images/5min.png)
+  - **5-Minute Moving Average Comparison**:  
+    We replaced the original 15-minute window in a dataset copy with the LSTM forecast. Then we plotted actual vs. predicted values using a 5-minute rolling average over a 45-minute window. This approach allows visual anomaly detection by highlighting significant deviations and line crossings, indicating potential anomalies.
 
+  - **Isolation Forest**:  
+    We also applied an Isolation Forest to detect anomalies using the actual and forecasted 15-minute windows. Both were fed into the model, and predictions were plotted to highlight anomalies. These were visually verified with side-by-side plots of original vs. predicted values.
 
-  - Isolation Forest: We also used an isolation forest in order to lookg for anomalies in the forecasted 15 minutes values, instead of the moving average. Here we simply took the original timeframe and the forecasted timeframe, gave both of them to the isolation forest to fit it and predict, then plotted the results. In the plot we have both the actual and the forecasted values with the anomalies highlighted:
-
-    ![Isolation forest](images/IsolationForest.png)
-
-- **Workflow**: The general workflow of the entire project can be easily understoond from this flowchart. Also, in the repository can be found a "requirements.txt" that will install all the required dependencies: 
+- **Workflow Overview**:  
+  The general workflow of the entire project is summarized in the following flowchart. The repository includes a `requirements.txt` file to install all dependencies:
 
     ![Flowchart](images/TimeSeriesForecasting.png)
 
+---
+
+## **Experimental Design**
+
+We conducted multiple experiments, covering all aspects from data augmentation to anomaly detection:
+
+- **Data Augmentation**:  
+  Our first task chronologically was to augment the dataset. We tried two alternatives before settling on the VAE:
+
+  - **Noising the Data**:  
+    Initially, we duplicated the original day five times and added Gaussian noise. While this approach yielded slightly different but similar data, it didn't feel like genuine augmentation. The generated data had roughly 10% variation from the original. Despite visual similarity in distributions, we decided not to proceed with this method.
+
+  - **GAN/TimeGAN**:  
+    We experimented with both vanilla GANs and TimeGAN. The results were unsatisfactory: the vanilla GAN generated unrealistic data, and TimeGAN posed implementation challenges and poor output. We couldn't derive any useful results or metrics, and ultimately abandoned the GAN-based approaches.
+
+- **Forecasting**:  
+  Although we were advised not to use ARIMA/SARIMA, we experimented with them briefly. These models actually produced decent forecasts, especially over longer windows (20–30 minutes), capturing trends and spikes effectively. However, in accordance with project guidelines, we did not use them for our final model or baselines. We used RMSE and R² scores to evaluate their performance.
+
+- **Anomaly Detection**:  
+  We also tested an autoencoder for anomaly detection on forecasted and actual values. Unfortunately, performance was poor—either missing obvious anomalies or overflagging normal data. This was likely due to suboptimal architecture or hyperparameter settings.
+
+---
+
+## **Results**
+
+The final results are quite satisfying, especially considering the effort-to-impact ratio. We invested significant time in data augmentation to ensure a solid foundation before forecasting and anomaly detection.
+
+Here is the distribution comparison after VAE augmentation:
+
+![VAE distribution](images/VAE.png)
+
+Despite early noisy outputs from the VAE, we managed to generate usable data that produced meaningful LSTM forecasts. While not perfect, the predictions were interpretable and effective for anomaly detection.
+
+From the rolling average analysis, we observed that the LSTM tends to **underestimate** the number of transactions. Still, it successfully identified anomalies: for instance, two anomalies were detected in a 20-minute window.
+
+The Isolation Forest model also performed well, detecting anomalies in both actual and forecasted data. In the same 15-minute window, we found four anomalies—two in the actual values and two in the forecasts.
+
+Here are the corresponding plots:
+
+![5 minute moving average](images/5min.png)
+
+![Isolation forest](images/IsolationForest.png)
+
+---
+
+## **Conclusion**
+
+This project was both challenging and rewarding. We explored unfamiliar areas such as data augmentation and implemented complex techniques like LSTMs and VAEs. Our progress required extensive research and adaptation.
+
+Although some ideas—like using GANs or AutoEncoders for anomaly detection—didn't pan out, we believe the final solution is robust and effective. It systematically addresses forecasting and anomaly detection with thoughtful modeling and meaningful visualizations.
+
+There’s plenty of room for future improvements, such as:
+- Tuning a more accurate LSTM model for better forecasts and anomaly identification  
+- Exploring alternative augmentation strategies to evaluate their impact on downstream performance
+
+---
 
 
